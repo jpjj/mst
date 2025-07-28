@@ -74,12 +74,14 @@ impl UnionFind {
     #[inline]
     fn find(&mut self, x: usize) -> usize {
         let mut y = x;
-        let mut p = self.parent[y];
-        while y != p {
-            let grandparent = self.parent[p];
-            self.parent[y] = grandparent;
-            y = p;
-            p = grandparent;
+        unsafe {
+            let mut p = *self.parent.get_unchecked(y);
+            while y != p {
+                let grandparent =  *self.parent.get_unchecked(p);
+                *self.parent.get_unchecked_mut(y) = grandparent;
+                y = p;
+                p = grandparent;
+            }
         }
         y
     }
@@ -92,7 +94,6 @@ impl UnionFind {
         if root_x == root_y {
             return false;
         }
-
         match self.rank[root_x].cmp(&self.rank[root_y]) {
             std::cmp::Ordering::Less => {
                 self.parent[root_x] = root_y;
@@ -105,6 +106,7 @@ impl UnionFind {
                 self.rank[root_x] += 1;
             }
         }
+
         true
     }
 }

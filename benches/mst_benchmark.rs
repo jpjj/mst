@@ -1,6 +1,5 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
 use mst::Graph;
-use rand::seq::SliceRandom;
 
 
 fn create_sparse_graph(n: usize, edges_per_node: usize) -> Graph {
@@ -65,7 +64,9 @@ fn benchmark_kruskal_partly_sorted(c: &mut Criterion) {
     for size in [2000].iter() {
         let mut graph = create_sparse_graph(*size, 20);
         graph.edges.sort_by_key(|x| x.weight);
-        graph.edges[0..100].shuffle(&mut rand::rng());
+        for _ in 0..100 {
+            graph.edges.swap(rand::random_range(0..2000), rand::random_range(0..2000));
+        }
         let sorted_edges = graph.sort_edges();
         group.bench_with_input(
             BenchmarkId::new("sorting", size),
