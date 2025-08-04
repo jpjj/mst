@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Node(pub usize);
 
@@ -11,15 +13,21 @@ pub struct Edge {
 #[derive(Debug)]
 pub struct Graph {
     pub edges: Vec<Edge>,
-    pub num_nodes: usize,
+    nodes: HashSet<Node>
+
 }
 
 impl Graph {
-    pub fn new(num_nodes: usize) -> Self {
+    pub fn new() -> Self {
         Graph {
             edges: Vec::new(),
-            num_nodes,
+            nodes: HashSet::new()
+
         }
+    }
+
+    pub fn num_nodes(&self) -> usize {
+        self.nodes.len()
     }
 
     pub fn add_edge(&mut self, u: usize, v: usize, weight: i64) {
@@ -28,29 +36,32 @@ impl Graph {
             v: Node(v),
             weight,
         });
+        self.nodes.insert(Node(u));
+        self.nodes.insert(Node(v));
     }
 
-    pub fn kruskal_mst(&self) -> (Vec<Edge>, i64) {
-        let mut sorted_edges = self.edges.clone();
-        sorted_edges.sort_by_key(|e| e.weight);
-        self.kruskal_from_sorted_edges(sorted_edges)
+    pub fn kruskal_mst(&mut self) -> (Vec<Edge>, i64) {
+        self.sort_edges();
+        self.kruskal_from_sorted_edges()
     }
 
-    pub fn sort_edges(&self) -> Vec<Edge> {
-        let mut sorted_edges = self.edges.clone();
-        sorted_edges.sort_by_key(|e| e.weight);
-        sorted_edges
+    pub fn sort_edges(&mut self)  {
+        self.edges.sort_by_key(|e| e.weight);
+
     }
 
-    pub fn kruskal_from_sorted_edges(&self, sorted_edges: Vec<Edge>) -> (Vec<Edge>, i64) {
-        let mut uf = UnionFind::new(self.num_nodes);
-        let mut mst_edges = Vec::with_capacity(self.num_nodes);
+    pub fn kruskal_from_sorted_edges(&self) -> (Vec<Edge>, i64) {
+        let mut uf = UnionFind::new(self.num_nodes());
+        let mut mst_edges = Vec::with_capacity(self.num_nodes());
         let mut total_weight = 0;
 
-        for edge in sorted_edges {
+        for edge in self.edges.iter() {
             if uf.union(edge.u.0, edge.v.0) {
                 total_weight += edge.weight;
-                mst_edges.push(edge);
+                mst_edges.push(edge.clone());
+                if mst_edges.len() == self.num_nodes() - 1 {
+                    break
+                }
             }
         }
 
@@ -117,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_kruskal_mst() {
-        let mut graph = Graph::new(4);
+        let mut graph = Graph::new();
         graph.add_edge(0, 1, 10);
         graph.add_edge(0, 2, 6);
         graph.add_edge(0, 3, 5);
@@ -132,7 +143,7 @@ mod tests {
 
     #[test]
     fn test_disconnected_graph() {
-        let mut graph = Graph::new(4);
+        let mut graph = Graph::new();
         graph.add_edge(0, 1, 1);
         graph.add_edge(2, 3, 1);
 
